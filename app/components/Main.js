@@ -1,39 +1,53 @@
 import React from 'react';
+import {connect} from 'react-redux';
+
 import {
  StyleSheet,
  Text,
  View,
  StatusBar,
  TextInput,
- ScrollView
+ ScrollView,
+ TouchableOpacity
 } from 'react-native';
 
-var TodoItem = React.createClass({
+import {addTodo, deleteTodo} from '../actions';
+
+var TodoItem = connect()(React.createClass({
+  deleteSelf(){
+    this.props.dispatch(deleteTodo(this.props.id));
+  },
   render() {
     return (
-      <View style={styles.todoContainer}>
-        <Text style={styles.todoText}>
-          {this.props.text}
-        </Text>
-      </View>
+      <TouchableOpacity onPress={this.deleteSelf}>
+        <View style={styles.todoContainer}>
+          <Text style={styles.todoText}>
+            {this.props.text}
+          </Text>
+        </View>
+      </TouchableOpacity>
     )
   }
-});
+}));
 
 var Main = React.createClass({
+getInitialState() {
+  return {
+    newTodoText: ""
+  }
+},
+  addNewTodo() {
+    var {newTodoText} = this.state;
+    if (newTodoText && newTodoText != "") {
+      this.setState({
+        newTodoText: ""
+      });
+      this.props.dispatch(addTodo(newTodoText));
+    }
+  },
  render() {
-   var temporaryTodos = [
-     {
-       id: "123123",
-       text: "Hi, Sarah!"
-     },
-     {
-       id: "123124",
-       text: "Hi again!"
-     }
-   ]
    var renderTodos = () => {
-     return temporaryTodos.map((todo) => {
+     return this.props.todos.map((todo) => {
        return (
          <TodoItem text={todo.text} key={todo.id} id={todo.id}/>
        )
@@ -48,7 +62,17 @@ var Main = React.createClass({
          </Text>
        </View>
        <View style={styles.inputContainer}>
-         <TextInput style={styles.input}/>
+         <TextInput
+           onChange={(event) => {
+             this.setState({
+               newTodoText: event.nativeEvent.text
+             });
+           }}
+           value={this.state.newTodoText}
+           returnKeyType="done"
+           placeholder="New To-Do"
+           onSubmitEditing={this.addNewTodo}
+           style={styles.input}/>
        </View>
          <ScrollView automaticallyAdjustContentInsets={false}>
           {renderTodos()}
@@ -112,4 +136,11 @@ const styles = StyleSheet.create({
   }
 });
 
-module.exports = Main;
+var mapStateToProps = (state) => {
+  return {
+    todos: state.todos
+  }
+}
+
+
+module.exports = connect(mapStateToProps)(Main);
